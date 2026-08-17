@@ -21,11 +21,10 @@ interface Question {
 const MathRenderer: React.FC<{ text?: string }> = ({ text = '' }) => {
   if (!text) return null;
 
-  // Clean up raw LaTeX tabular strings if sent directly from PDF
   if (text.includes('\\begin{tabular}')) {
     return (
       <div className="my-3 p-4 bg-slate-50 border border-slate-200 rounded-xl overflow-x-auto text-sm font-mono text-slate-800">
-        <p className="font-sans font-bold text-xs text-blue-600 uppercase mb-2">Matrix Match Question:</p>
+        <p className="font-sans font-bold text-xs text-blue-600 uppercase mb-2">Matrix / Tabular Content:</p>
         <div className="whitespace-pre-line leading-relaxed font-sans">
           {text
             .replace(/\\begin\{tabular\}.*?\\hline/g, '')
@@ -71,7 +70,7 @@ export default function CBTApp() {
   const [testSubmitted, setTestSubmitted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(1800);
 
-  // Drawing Canvas State (Black Only, Size, Eraser, Clear)
+  // Drawing Canvas State
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawMode, setDrawMode] = useState(true);
@@ -137,7 +136,7 @@ export default function CBTApp() {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
 
-    ctx.strokeStyle = isEraser ? '#ffffff' : '#0f172a'; // Black ink (#0f172a)
+    ctx.strokeStyle = isEraser ? '#ffffff' : '#0f172a';
     ctx.lineWidth = isEraser ? pencilWidth * 6 : pencilWidth;
     ctx.lineTo(clientX - rect.left, clientY - rect.top);
     ctx.stroke();
@@ -229,7 +228,10 @@ export default function CBTApp() {
       const qType = q.type || 'mcq';
 
       if (qType === 'mcq') {
-        if (uAns === q.correctOptionIndex) {
+        const userVal = Number(uAns);
+        const correctVal = Number(q.correctOptionIndex);
+
+        if (!isNaN(userVal) && userVal === correctVal) {
           score += 4;
           correct++;
         } else {
@@ -237,11 +239,12 @@ export default function CBTApp() {
           wrong++;
         }
       } else if (qType === 'multiple_correct') {
-        const correctSet = q.correctOptionIndexes || [];
+        const correctSet = (q.correctOptionIndexes || []).map(Number);
+        const userArray = (Array.isArray(uAns) ? uAns : []).map(Number);
+
         const isExactMatch =
-          Array.isArray(uAns) &&
-          uAns.length === correctSet.length &&
-          uAns.every((val) => correctSet.includes(val));
+          userArray.length === correctSet.length &&
+          userArray.every((val) => correctSet.includes(val));
 
         if (isExactMatch) {
           score += 4;
@@ -270,17 +273,11 @@ export default function CBTApp() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // =========================================================================
-  // 1. HOME SCREEN: PROFESSIONAL NOTEBOOK WITH BLACK PENCIL & ERASER
-  // =========================================================================
+  // 1. HOME SCREEN VIEW
   if (questions.length === 0) {
     return (
       <div className="relative min-h-screen bg-slate-900 flex flex-col items-center justify-center p-4 overflow-hidden select-none">
-
-        {/* Notebook Canvas Frame */}
         <div className="relative w-full max-w-4xl min-h-[85vh] bg-white rounded-2xl shadow-2xl border border-slate-700 flex flex-col overflow-hidden">
-
-          {/* Drawing Canvas Overlay */}
           <canvas
             ref={canvasRef}
             onMouseDown={startDrawing}
@@ -290,18 +287,15 @@ export default function CBTApp() {
             onTouchStart={startDrawing}
             onTouchMove={draw}
             onTouchEnd={stopDrawing}
-            className={`absolute inset-0 z-20 ${drawMode ? 'cursor-crosshair' : 'pointer-events-none'
-              }`}
+            className={`absolute inset-0 z-20 ${drawMode ? 'cursor-crosshair' : 'pointer-events-none'}`}
           />
 
-          {/* Minimalist Drawing Controls Header */}
           <div className="relative z-30 bg-slate-100 border-b border-slate-200 px-6 py-3 flex flex-wrap items-center justify-between gap-4 text-xs font-medium text-slate-700">
             <div className="flex items-center gap-3">
-              <span className="font-bold text-slate-900">✏️ Drawing Pad:</span>
+              <span className="font-bold text-slate-900">✏️ Scratchpad:</span>
               <button
                 onClick={() => setDrawMode(!drawMode)}
-                className={`px-3 py-1.5 rounded-lg border transition-all ${drawMode ? 'bg-slate-900 text-white border-slate-900 font-bold' : 'bg-white border-slate-300'
-                  }`}
+                className={`px-3 py-1.5 rounded-lg border transition-all ${drawMode ? 'bg-slate-900 text-white border-slate-900 font-bold' : 'bg-white border-slate-300'}`}
               >
                 {drawMode ? 'Drawing On' : 'Drawing Off'}
               </button>
@@ -312,15 +306,13 @@ export default function CBTApp() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsEraser(false)}
-                    className={`px-3 py-1 rounded border font-semibold ${!isEraser ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-300'
-                      }`}
+                    className={`px-3 py-1 rounded border font-semibold ${!isEraser ? 'bg-slate-900 text-white border-slate-900' : 'bg-white border-slate-300'}`}
                   >
                     ✏️ Pencil
                   </button>
                   <button
                     onClick={() => setIsEraser(true)}
-                    className={`px-3 py-1 rounded border font-semibold ${isEraser ? 'bg-amber-600 text-white border-amber-600' : 'bg-white border-slate-300'
-                      }`}
+                    className={`px-3 py-1 rounded border font-semibold ${isEraser ? 'bg-amber-600 text-white border-amber-600' : 'bg-white border-slate-300'}`}
                   >
                     🧹 Eraser
                   </button>
@@ -348,14 +340,13 @@ export default function CBTApp() {
             )}
           </div>
 
-          {/* Centered Upload & Workspace Content */}
           <div className="flex-1 px-8 py-16 flex flex-col items-center justify-center text-center z-10 pointer-events-none">
             <div className="bg-white/95 p-8 rounded-2xl border border-slate-200 shadow-xl max-w-lg pointer-events-auto backdrop-blur">
               <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
                 CBT Test Engine
               </h1>
               <p className="text-slate-600 text-sm leading-relaxed mb-8">
-                Upload any exam PDF or image to convert it into a standardized Computer-Based Test with automated grading and complete LaTeX formula support.
+                Upload any exam PDF or image to convert it into a standardized Computer-Based Test with automated grading and complete step-by-step LaTeX solutions.
               </p>
 
               <label className="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-sm px-7 py-3.5 rounded-xl shadow-lg cursor-pointer transition-all">
@@ -382,7 +373,7 @@ export default function CBTApp() {
               </label>
 
               <div className="mt-4 text-xs text-slate-400">
-                Drag your mouse anywhere on the notebook background to draw/scratch notes freely.
+                Draw or scribble notes on the background anytime during preparation.
               </div>
             </div>
           </div>
@@ -391,9 +382,7 @@ export default function CBTApp() {
     );
   }
 
-  // =========================================================================
-  // 2. SUBMITTED TEST SUMMARY DASHBOARD
-  // =========================================================================
+  // 2. SUBMITTED TEST SUMMARY VIEW (WITH FULL STEP-BY-STEP SOLUTIONS)
   if (testSubmitted) {
     const stats = calculateScore();
     return (
@@ -446,12 +435,12 @@ export default function CBTApp() {
                       let style = 'border-slate-700 bg-slate-900/50 text-slate-300';
 
                       const isCorrectOpt = qType === 'multiple_correct'
-                        ? qItem.correctOptionIndexes?.includes(oIdx)
-                        : qItem.correctOptionIndex === oIdx;
+                        ? (qItem.correctOptionIndexes || []).map(Number).includes(oIdx)
+                        : Number(qItem.correctOptionIndex) === oIdx;
 
                       const isUserChosen = qType === 'multiple_correct'
-                        ? Array.isArray(userAns) && userAns.includes(oIdx)
-                        : userAns === oIdx;
+                        ? Array.isArray(userAns) && userAns.map(Number).includes(oIdx)
+                        : Number(userAns) === oIdx;
 
                       if (isCorrectOpt) {
                         style = 'border-emerald-500 bg-emerald-950/50 text-emerald-300 font-medium';
@@ -483,8 +472,10 @@ export default function CBTApp() {
                 )}
 
                 {qItem.explanation && (
-                  <div className="text-xs text-slate-300 mt-3 bg-slate-900/80 p-3 rounded-lg border border-slate-700/60">
-                    <strong className="text-amber-400 block mb-1">Explanation:</strong>
+                  <div className="text-sm text-slate-200 mt-4 bg-slate-900/90 p-4 rounded-xl border border-amber-500/30">
+                    <strong className="text-amber-400 block mb-2 font-bold uppercase tracking-wider text-xs">
+                      💡 Step-by-Step Solution:
+                    </strong>
                     <MathRenderer text={qItem.explanation} />
                   </div>
                 )}
@@ -503,9 +494,7 @@ export default function CBTApp() {
     );
   }
 
-  // =========================================================================
-  // 3. ACTIVE NTA-STYLE CBT EXAMINATION PORTAL
-  // =========================================================================
+  // 3. ACTIVE TEST EXAMINATION VIEW
   const q = questions[currentIndex];
   const qType = q?.type || 'mcq';
 
@@ -552,7 +541,7 @@ export default function CBTApp() {
             {qType === 'mcq' && q.options && (
               <div className="space-y-3">
                 {q.options.map((opt, oIdx) => {
-                  const isSelected = userAnswers[currentIndex] === oIdx;
+                  const isSelected = Number(userAnswers[currentIndex]) === oIdx;
                   return (
                     <button
                       key={oIdx}
@@ -582,7 +571,7 @@ export default function CBTApp() {
             {qType === 'multiple_correct' && q.options && (
               <div className="space-y-3">
                 <p className="text-xs font-semibold text-amber-700 bg-amber-50 p-2 rounded border border-amber-200 mb-2">
-                  ℹ️ Note: This question can have one or more correct options. Select all that apply.
+                  ℹ️ Note: Select all correct options that apply.
                 </p>
                 {q.options.map((opt, oIdx) => {
                   const selectedOpts: number[] = userAnswers[currentIndex] || [];
@@ -677,8 +666,7 @@ export default function CBTApp() {
                   <button
                     key={idx}
                     onClick={() => navigateTo(idx)}
-                    className={`w-10 h-10 rounded-lg text-xs font-bold transition-all shadow-sm ${bgClass} ${currentIndex === idx ? 'ring-2 ring-offset-2 ring-blue-600' : ''
-                      }`}
+                    className={`w-10 h-10 rounded-lg text-xs font-bold transition-all shadow-sm ${bgClass} ${currentIndex === idx ? 'ring-2 ring-offset-2 ring-blue-600' : ''}`}
                   >
                     {idx + 1}
                   </button>
